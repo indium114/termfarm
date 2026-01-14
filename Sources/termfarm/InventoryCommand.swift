@@ -23,5 +23,16 @@ struct InventoryCommand: ParsableCommand {
                 print(" - \(amount)x \(seed)")
             }
         }
+
+        print("")
+        print(" Crops:")
+
+        if farm.inventory.crops.isEmpty {
+            print(" none")
+        } else {
+            for (crop, amount) in farm.inventory.crops.sorted(by: { $0.key < $1.key }) {
+                print(" - \(amount)x \(crop)")
+            }
+        }
     }
 }
