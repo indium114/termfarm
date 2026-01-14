@@ -30,6 +30,7 @@ struct Stats: ParsableCommand {
             󰹢 \(stats.inventorySeeds) seeds in inventory
              \(stats.coins) coins in wallet
             \(trendIcon) \(trendPct)
+              \(formatDuration(stats.nextMarketRotationIn)) until next market rotation
             """)
         }
     }
