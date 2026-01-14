@@ -11,11 +11,7 @@ struct Init: ParsableCommand {
             coins: 100,
             plots: (0..<3).map { _ in Plot(id: UUID(), plantedCrop: nil, plantedAt: nil) },
             inventory: Inventory(),
-            market: MarketState(
-                availableSeeds: [ "wheat", "carrot" ],
-                priceModifiers: [:],
-                lastRotation: Date()
-            ),
+            market: generateMarket(),
             lastUpdated: Date()
         )
 

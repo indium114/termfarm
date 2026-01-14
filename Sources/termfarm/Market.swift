@@ -1,9 +1,25 @@
 import Foundation
 
-let marketRotationInterval: TimeInterval = 4 * 60 * 60 // 4 hours
+let marketRotationInterval: TimeInterval = 4 * 60 * 60
 let marketMaxItems = 3
 
 let priceModifierRange: ClosedRange<Double> = 0.7...1.3
+
+func generateMarket() -> MarketState {
+    let allSeeds = Array(cropRegistry.keys).shuffled()
+    let selection = Array(allSeeds.prefix(marketMaxItems))
+
+    var modifiers: [String: Double] = [:]
+    for seed in selection {
+        modifiers[seed] = Double.random(in: priceModifierRange)
+    }
+
+    return MarketState(
+        availableSeeds: selection,
+        priceModifiers: modifiers,
+        lastRotation: Date()
+    )
+}
 
 func updateMarketIfNeeded(farm: inout FarmState) {
     let now = Date()
@@ -11,6 +27,8 @@ func updateMarketIfNeeded(farm: inout FarmState) {
     guard now.timeIntervalSince(farm.market.lastRotation) >= marketRotationInterval else {
         return
     }
+
+    farm.market = generateMarket()
 
     // Pick random seeds from registry
     let allSeeds = Array(cropRegistry.keys).shuffled()
