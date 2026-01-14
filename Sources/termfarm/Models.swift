@@ -1,6 +1,7 @@
 import Foundation
 
 struct CropType: Codable, Identifiable {
+    let icon: String
     let id: String
     let growTime: TimeInterval
     let baseBuyPrice: Int

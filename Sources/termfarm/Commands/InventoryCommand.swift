@@ -30,7 +30,7 @@ struct InventoryCommand: ParsableCommand {
         if farm.inventory.crops.isEmpty {
             print(" none")
         } else {
-            for (crop, amount) in farm.inventory.crops.sorted(by: { $0.key < $1.key }) {
+            for (crop, amount, icon) in farm.inventory.crops.sorted(by: { $0.key < $1.key }) {
                 print(" - \(amount)x \(crop)")
             }
         }
