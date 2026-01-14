@@ -25,12 +25,12 @@ struct Stats: ParsableCommand {
             let trendPct  = String(format: "%+.1f%%", stats.marketTrend * 100) 
 
             print("""
-             \(stats.readyToHarvest)/\(stats.totalPlots) ready | \
-            󰜦 \(stats.inventoryCrops) crops in inventory | \
-            󰹢 \(stats.inventorySeeds) seeds in inventory | \
-             \(stats.coins) coins in wallet | \
-            \(trendIcon) \(trendPct) | \
-              \(formatDuration(stats.nextMarketRotationIn)) until next market rotation
+            \(Colours.green.rawValue) \(stats.readyToHarvest)/\(stats.totalPlots) ready \(Colours.reset.rawValue)| \
+            \(Colours.blue.rawValue)󰜦 \(stats.inventoryCrops) crops in inventory \(Colours.reset.rawValue)| \
+            \(Colours.cyan.rawValue)󰹢 \(stats.inventorySeeds) seeds in inventory \(Colours.reset.rawValue)| \
+            \(Colours.yellow.rawValue) \(stats.coins) coins in wallet \(Colours.reset.rawValue)| \
+            \(Colours.red.rawValue)\(trendIcon) \(trendPct) \(Colours.reset.rawValue)| \
+            \(Colours.magenta.rawValue)  \(formatDuration(stats.nextMarketRotationIn)) until next market rotation\(Colours.reset.rawValue)
             """)
         }
     }
