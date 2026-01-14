@@ -21,7 +21,7 @@ struct Market: ParsableCommand {
             let trend = modifier > 0 ? "󰔵" : modifier < 0 ? "󰔳" : "󰔴"
             let pct   = String(format: "%+.0f%%", modifier * 100)
 
-            print(" \(crop.id) - \(price) coins (\(trend) \(pct))") // TODO: Make crops have their own crop.icon field
+            print("\(crop.icon) \(crop.id) - \(price) coins (\(trend) \(pct))") // TODO: Make crops have their own crop.icon field
         }
     }
 }
