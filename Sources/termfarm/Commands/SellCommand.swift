@@ -32,6 +32,7 @@ struct Sell: ParsableCommand {
 
         let total = price * sellAmount
 
+        farm.inventory.crops[cropID] = owned - sellAmount
         if farm.inventory.crops[cropID] == 0 {
             farm.inventory.crops.removeValue(forKey: cropID)
         }
