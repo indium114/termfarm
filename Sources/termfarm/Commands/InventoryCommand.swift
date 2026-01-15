@@ -20,7 +20,11 @@ struct InventoryCommand: ParsableCommand {
             print(" none")
         } else {
             for (seed, amount) in farm.inventory.seeds.sorted(by: { $0.key < $1.key }) {
-                print(" - \(amount)x \(seed)")
+                guard let seedIcon = cropRegistry[seed]?.icon else {
+                    let seedIcon = "?"
+                    continue
+                }
+                print(" - \(seedIcon) \(amount)x \(seed)")
             }
         }
 
