@@ -2,6 +2,8 @@
 
 **termfarm** is a simple CLI idle farming game written in *Swift*.
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/StikyPiston/termfarm)
+
 ## Features
 
 - A *rotating market* with various crop seeds to purchase, with fluctuating prices.
