@@ -31,3 +31,22 @@ func loadFarm() (FarmState, error) {
 
 	return farm, nil
 }
+
+func saveFarm(farm FarmState) error {
+	data, err := json.Marshal(farm)
+	if err != nil {
+		return err
+	}
+
+	tmpPath := saveURL() + ".tmp"
+	err = os.WriteFile(tmpPath, data, 0644)
+	if err != nil {
+		return err
+	}
+	err = os.Rename(tmpPath, saveURL())
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
