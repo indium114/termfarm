@@ -70,5 +70,26 @@ let cropRegistry: [String: CropType] = [
         growTime: 60 * 5,
         baseBuyPrice: 6,
         baseSellPrice: 9
+    ),
+    "mango": CropType(
+        icon: "🥭",
+        id: "mango",
+        growTime: 60 * 15,
+        baseBuyPrice: 14,
+        baseSellPrice: 20,
+    ),
+    "cantaloupe": CropType(
+        icon: "🍈",
+        id: "cantaloupe",
+        growTime: 60 * 20,
+        baseBuyPrice: 15,
+        baseSellPrice: 25,
+    ),
+    "lemon": CropType(
+        icon: "🍋",
+        id: "lemon",
+        growTime: 60 * 8,
+        baseBuyPrice: 10,
+        baseSellPrice: 12,
     )
 ]
