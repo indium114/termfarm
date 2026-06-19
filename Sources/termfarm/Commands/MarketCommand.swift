@@ -8,10 +8,12 @@ struct Market: ParsableCommand {
 
     func run() throws {
         let farm = try loadFarm()
+        let stats = computeStats(farm: farm)
 
         print("󰄐 Seed Market")
         print("-------------")
         print(" Balance: \(farm.coins)")
+        print("󰑓 Rotates In: \(formatDuration(stats.nextMarketRotationIn))")
         print("-------------")
         print()
 
