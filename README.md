@@ -22,6 +22,9 @@
 
 Go to the *Releases* section on the right, click the latest release, and click the binary for your architecture to download it.
 
+> [!note]
+> On macOS, you will have to compile `termfarm` from source.
+
 ### with [wares](https://github.com/indium114/wares)
 
 Simply add the following to your `config.yaml`:
@@ -35,5 +38,10 @@ wares:
 ```
 > replace `x86_64` with `arm64` if you're on an ARM processor.
 
-> [!note]
-> On macOS, you will have to compile `termfarm` from source.
+### with cargo
+
+Run the following to install *termfarm*. Ensure that `~/.cargo/bin` is in your `$PATH`
+
+```shell
+cargo install termfarm
+```
