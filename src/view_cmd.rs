@@ -6,7 +6,6 @@ use std::time::{Duration, SystemTime};
 pub fn view() {
     let farm = load_farm();
     let registry = crop_registry();
-    let now = SystemTime::now();
 
     println!(" Plots");
     println!("-------");
@@ -19,7 +18,7 @@ pub fn view() {
                 Some(at) => {
                     let crop = &registry[&crop_id];
                     let elapsed = at.elapsed().unwrap();
-                    let remaining = crop.grow_time as u64 - elapsed.as_secs();
+                    let remaining = crop.grow_time as i64 - elapsed.as_secs() as i64;
 
                     if remaining <= 0 {
                         println!("[{plot_number}] {} {} ready to harvest", crop.icon, crop.id)
@@ -28,7 +27,7 @@ pub fn view() {
                             "[{plot_number}] {} {} {} left",
                             crop.icon,
                             crop.id,
-                            format_duration(Duration::from_secs(remaining))
+                            format_duration(Duration::from_secs(remaining as u64))
                         )
                     }
                 }
