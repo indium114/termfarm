@@ -1,5 +1,7 @@
 use clap::{Parser, Subcommand};
 
+mod models;
+
 static VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(Parser)]
@@ -20,7 +22,7 @@ enum Commands {
     /// View the seed market
     Market,
     /// Buy seeds from the market
-    Buy { seed_id: String, amount: u32 },
+    Buy { seed_id: String, amount: u16 },
     /// Plant a seed
     Plant { seed_id: String },
     /// Harvest all mature crops
@@ -28,7 +30,7 @@ enum Commands {
     /// List the contents of your inventory
     Inventory,
     /// Sell crops from your inventory
-    Sell { seed_id: String, amount: u32 },
+    Sell { seed_id: String, amount: u16 },
     /// Buy a new plot
     BuyPlot,
     /// View the status of farm plots
