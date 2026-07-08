@@ -13,15 +13,25 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    /// Initialise a new termfarm save file
     Init,
+    /// Show farm statistics
     Stats,
+    /// View the seed market
     Market,
+    /// Buy seeds from the market
     Buy { seed_id: String, amount: u32 },
+    /// Plant a seed
     Plant { seed_id: String },
+    /// Harvest all mature crops
     Harvest,
+    /// List the contents of your inventory
     Inventory,
+    /// Sell crops from your inventory
     Sell { seed_id: String, amount: u32 },
+    /// Buy a new plot
     BuyPlot,
+    /// View the status of farm plots
     View,
 }
 
