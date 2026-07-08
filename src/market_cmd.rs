@@ -40,7 +40,7 @@ pub fn market() {
                 "󰔴"
             }
         };
-        let pct = format!("{:.0}%%", modifier * 100.0);
+        let pct = format!("{:.0}%", modifier * 100.0);
 
         println!("{} {} - {price} coins ({trend} {pct})", crop.icon, crop.id)
     }

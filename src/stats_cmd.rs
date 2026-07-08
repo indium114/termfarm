@@ -17,7 +17,7 @@ pub fn stats() {
         "󰔴"
     };
 
-    let trend_pct = format!("{:.1}%%", stats.market_trend * 100.0);
+    let trend_pct = format!("{:.1}%", stats.market_trend * 100.0);
     let total_planted = stats.ready_to_harvest + stats.growing_crops;
     let next_rotation =
         format_duration(Duration::from_secs(stats.next_market_rotation_in.as_secs()));
