@@ -19,22 +19,22 @@ pub fn view() {
                 Some(at) => {
                     let crop = &registry[&crop_id];
                     let elapsed = at.elapsed().unwrap();
-                    let remaining = crop.grow_time as f64 - elapsed.as_secs_f64();
+                    let remaining = crop.grow_time as u64 - elapsed.as_secs();
 
-                    if remaining <= 0.0 {
+                    if remaining <= 0 {
                         println!("[{plot_number}] {} {} ready to harvest", crop.icon, crop.id)
                     } else {
                         println!(
                             "[{plot_number}] {} {} {} left",
                             crop.icon,
                             crop.id,
-                            format_duration(Duration::from_secs_f64(remaining))
+                            format_duration(Duration::from_secs(remaining))
                         )
                     }
                 }
                 None => {
                     usefulog::err(
-                        "found crop without a plantedAt value! this should not be possible.",
+                        "found crop without a planted_at value! this should not be possible.",
                     );
                     std::process::exit(1);
                 }
