@@ -23,7 +23,7 @@ pub fn stats() {
         format_duration(Duration::from_secs(stats.next_market_rotation_in.as_secs()));
 
     let ready = format!(
-        " {}/{}/{}",
+        " {}/{}/{} ready",
         stats.ready_to_harvest, total_planted, stats.total_plots
     )
     .green();
