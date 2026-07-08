@@ -2,6 +2,7 @@ use clap::{Parser, Subcommand};
 
 mod models;
 mod persistence;
+mod plot_pricing;
 
 static VERSION: &str = env!("CARGO_PKG_VERSION");
 
