@@ -8,6 +8,7 @@ mod plot_pricing;
 mod stats;
 
 mod init_cmd;
+mod inventory_cmd;
 mod market_cmd;
 mod stats_cmd;
 
@@ -69,7 +70,7 @@ fn main() {
             todo!()
         }
         Commands::Inventory => {
-            todo!()
+            inventory_cmd::inventory();
         }
         Commands::Sell { seed_id, amount } => {
             todo!()
