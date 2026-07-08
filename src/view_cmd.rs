@@ -1,3 +1,4 @@
+use colorize::AnsiColor;
 use humantime::format_duration;
 
 use crate::{crops::crop_registry, persistence::load_farm};
@@ -21,7 +22,12 @@ pub fn view() {
                     let remaining = crop.grow_time as i64 - elapsed.as_secs() as i64;
 
                     if remaining <= 0 {
-                        println!("[{plot_number}] {} {} ready to harvest", crop.icon, crop.id)
+                        println!(
+                            "[{plot_number}] {} {} {}",
+                            crop.icon,
+                            crop.id,
+                            "ready to harvest".green()
+                        )
                     } else {
                         println!(
                             "[{plot_number}] {} {} {} left",
