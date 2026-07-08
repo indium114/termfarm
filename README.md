@@ -1,6 +1,6 @@
 # termfarm
 
-**termfarm** is a simple CLI idle farming game written in *Swift*.
+**termfarm** is a simple CLI idle farming game written in *Rust*.
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/indium114/termfarm)
 
