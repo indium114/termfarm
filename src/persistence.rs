@@ -15,10 +15,14 @@ pub fn save_path() -> String {
 
 pub fn load_farm() -> FarmState {
     let path = save_path();
-    fs::read_to_string(path)
+    let mut farm = fs::read_to_string(path)
         .ok()
         .and_then(|s| serde_json::from_str(&s).ok())
-        .unwrap()
+        .unwrap();
+
+    // TODO: update_market_if_needed(&farm)
+
+    return farm;
 }
 
 pub fn save_farm(farm: &FarmState) -> bool {
