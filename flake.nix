@@ -26,7 +26,7 @@
 
         packages.termfarm = pkgs.rustPlatform.buildRustPackage {
           name = "termfarm";
-          version = "2.0.0";
+          version = "2.0.1";
 
           src = ./.;
 
