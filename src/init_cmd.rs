@@ -1,0 +1,31 @@
+use std::time::SystemTime;
+
+use crate::{
+    market::generate_market,
+    models::{FarmState, Inventory, Plot},
+    persistence::save_farm,
+};
+
+pub fn init() {
+    let farm = FarmState {
+        coins: 100,
+        plots: (0..3)
+            .map(|_| Plot {
+                id: uuid::Uuid::new_v4(),
+                planted_crop: None,
+                planted_at: None,
+            })
+            .collect::<Vec<_>>(),
+        inventory: Inventory {
+            crops: None,
+            seeds: None,
+        },
+        market: generate_market(),
+        last_updated: SystemTime::now(),
+    };
+
+    match save_farm(&farm) {
+        true => println!("󰉉 termfarm save file initialised!"),
+        false => panic!("failed to save farm"),
+    }
+}

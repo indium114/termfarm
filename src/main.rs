@@ -50,7 +50,7 @@ fn main() {
 
     match &cli.command {
         Commands::Init => {
-            todo!()
+            init_cmd::init();
         }
         Commands::Stats => {
             stats_cmd::stats();

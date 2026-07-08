@@ -1,6 +1,7 @@
+use std::time::Duration;
+
 use colorize::AnsiColor;
 use humantime::format_duration;
-use std::time::Duration;
 
 use crate::{persistence::load_farm, stats::compute_stats};
 
@@ -18,7 +19,8 @@ pub fn stats() {
 
     let trend_pct = format!("{:.1}%%", stats.market_trend * 100.0);
     let total_planted = stats.ready_to_harvest + stats.growing_crops;
-    let next_rotation = format_duration(stats.next_market_rotation_in);
+    let next_rotation =
+        format_duration(Duration::from_secs(stats.next_market_rotation_in.as_secs()));
 
     let ready = format!(
         " {}/{}/{}",
