@@ -11,6 +11,9 @@ pub fn inventory() {
 
     match farm.inventory.seeds {
         Some(seeds) => {
+            if seeds.is_empty() {
+                println!(" none");
+            }
             for (seed, amount) in seeds {
                 let icon = registry[&seed].icon;
                 println!(" - {icon} {amount}x {seed}");
@@ -24,6 +27,9 @@ pub fn inventory() {
 
     match farm.inventory.crops {
         Some(crops) => {
+            if crops.is_empty() {
+                println!(" none");
+            }
             for (crop, amount) in crops {
                 let icon = registry[&crop].icon;
                 println!(" - {icon} {amount}x {crop}");
