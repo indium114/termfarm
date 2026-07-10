@@ -29,7 +29,10 @@ pub fn stats() {
     .green();
     let inventory_crops = format!("󰜦 {} crops in inventory", stats.inventory_crops).blue();
     let inventory_seeds = format!("󰹢 {} seeds in inventory", stats.inventory_seeds).cyan();
-    let wallet = format!(" {} coins in inventory", stats.coins).yellow();
+    let wallet = match stats.coins {
+        1 => format!(" {} coin in wallet", stats.coins).yellow(),
+        _ => format!(" {} coins in wallet ", stats.coins).yellow(),
+    };
     let trend = format!("{trend_icon} {trend_pct}").red();
     let rotate = format!("  {next_rotation} until next market rotation").magenta();
 
