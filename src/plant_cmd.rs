@@ -11,7 +11,10 @@ pub fn plant(seed_id: String) {
 
     let seeds = farm.inventory.seeds.get_or_insert_with(HashMap::new);
     let seed_count = seeds.entry(seed_id.clone()).or_insert(0);
-    let index = farm.plots.iter().position(|plot| plot.planted_crop.is_none());
+    let index = farm
+        .plots
+        .iter()
+        .position(|plot| plot.planted_crop.is_none());
 
     if !registry.contains_key(&seed_id.clone()) {
         usefulog::err(format!("Unknown seed: {seed_id}"));

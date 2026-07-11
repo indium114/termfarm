@@ -16,8 +16,7 @@ use ratatui::{
 };
 use ratatui_notifications::{Level, Notification, Notifications};
 
-static NAVIGATION_TEXT: &str =
-    " Change Tabs: <Tab/Shift+Tab>, Quit <q> ";
+static NAVIGATION_TEXT: &str = " Change Tabs: <Tab/Shift+Tab>, Quit <q> ";
 
 pub fn run() {
     let _ = ratatui::run(|terminal| App::new().run(terminal));

@@ -29,6 +29,6 @@ pub fn init() {
         false => {
             usefulog::err("failed to save farm");
             std::process::exit(1);
-        },
+        }
     }
 }

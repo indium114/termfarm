@@ -1,7 +1,7 @@
 use crate::crops::crop_registry;
 use crate::models::{FarmState, MarketState};
-use rand::RngExt;
 use rand::seq::SliceRandom;
+use rand::RngExt;
 use std::collections::HashMap;
 use std::ops::RangeInclusive;
 use std::time::SystemTime;
@@ -18,7 +18,8 @@ pub fn generate_market() -> MarketState {
     all_seeds.shuffle(&mut rng);
     let selection: Vec<String> = all_seeds
         .into_iter()
-        .take(MARKET_MAX_ITEMS).cloned()
+        .take(MARKET_MAX_ITEMS)
+        .cloned()
         .collect();
 
     let mut modifiers: HashMap<String, f64> = HashMap::new();
@@ -61,6 +62,11 @@ pub fn buy_price(crop_id: String, farm: &FarmState) -> u16 {
 pub fn sell_price(crop_id: String, farm: &FarmState) -> u16 {
     let registry = crop_registry();
     let crop = &registry[&crop_id];
-    let modifier = farm.market.price_modifiers.get(&crop_id).copied().unwrap_or(1.0);
+    let modifier = farm
+        .market
+        .price_modifiers
+        .get(&crop_id)
+        .copied()
+        .unwrap_or(1.0);
     ((crop.base_sell_price as f64) * modifier) as u16
 }
