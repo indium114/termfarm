@@ -3,14 +3,15 @@ use std::time::Duration;
 use crate::{crops::crop_registry, models::FarmState, persistence};
 use humantime::format_duration;
 use ratatui::{
+    DefaultTerminal, Frame,
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{Constraint, Direction, Layout},
     text::Line,
     widgets::{Block, BorderType, Borders, Paragraph, Wrap},
-    DefaultTerminal, Frame,
 };
 
-static NAVIGATION_TEXT: &str = " Move <Up/Down/Left/Right>, Change Tabs: <Tab/Shift+Tab>, Quit <q> ";
+static NAVIGATION_TEXT: &str =
+    " Move <Up/Down/Left/Right>, Change Tabs: <Tab/Shift+Tab>, Quit <q> ";
 
 pub fn run() {
     let _ = ratatui::run(|terminal| App::new().run(terminal));
@@ -101,9 +102,7 @@ impl App {
                             .borders(Borders::ALL)
                             .border_type(BorderType::Thick)
                             .title_top(" termfarm ")
-                            .title_bottom(
-                                Line::from("".to_string() + &NAVIGATION_TEXT).right_aligned(),
-                            ),
+                            .title_bottom(Line::from(NAVIGATION_TEXT).right_aligned()),
                     ),
                     master_layout[0],
                 );
@@ -149,9 +148,7 @@ impl App {
                         .borders(Borders::ALL)
                         .border_type(BorderType::Thick)
                         .title_top(" termfarm ")
-                        .title_bottom(
-                            Line::from("".to_string() + &NAVIGATION_TEXT).right_aligned(),
-                        ),
+                        .title_bottom(Line::from(NAVIGATION_TEXT).right_aligned()),
                 ),
                 master_layout[0],
             ),
@@ -161,9 +158,7 @@ impl App {
                         .borders(Borders::ALL)
                         .border_type(BorderType::Thick)
                         .title_top(" termfarm ")
-                        .title_bottom(
-                            Line::from("".to_string() + &NAVIGATION_TEXT).right_aligned(),
-                        ),
+                        .title_bottom(Line::from(NAVIGATION_TEXT).right_aligned()),
                 ),
                 master_layout[0],
             ),
