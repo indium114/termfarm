@@ -116,7 +116,7 @@ impl App {
         match &self.farm.inventory.seeds {
             Some(seeds) => {
                 if seeds.is_empty() {
-                    inventory_seed_constraints.push(Constraint::Length(6));
+                    inventory_seed_constraints.push(Constraint::Length(8));
                 }
                 for seed in seeds {
                     inventory_seed_constraints.push(Constraint::Fill(
@@ -124,7 +124,7 @@ impl App {
                     ))
                 }
             }
-            None => inventory_seed_constraints.push(Constraint::Length(6))
+            None => inventory_seed_constraints.push(Constraint::Length(8))
         }
 
         let inventory_main_layout = Layout::default()
