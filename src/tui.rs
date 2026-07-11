@@ -195,7 +195,7 @@ impl App {
                         KeyCode::Char('h') if self.active_tab == Tabs::Farm => {
                             let text = harvest_cmd::harvest(false);
                             let notif = Notification::new(text)
-                                .title("󱕓 Harvested:")
+                                .title(" Harvested:")
                                 .level(Level::Info)
                                 .build()
                                 .unwrap();
