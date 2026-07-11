@@ -83,17 +83,17 @@ impl App {
         let mut farm_horizontal_constraints: Vec<Constraint> = Vec::new();
         for _ in &self.farm.plots {
             farm_vertical_constraints.push(Constraint::Length(
-                100 / ((self.farm.plots.iter().count() as u16) + 1),
+                100 / ((self.farm.plots.len() as u16) + 1),
             ));
             farm_horizontal_constraints.push(Constraint::Length(
-                100 / ((self.farm.plots.iter().count() as u16) + 1),
+                100 / ((self.farm.plots.len() as u16) + 1),
             ));
         }
         farm_vertical_constraints.push(Constraint::Length(
-            100 / ((self.farm.plots.iter().count() as u16) + 1),
+            100 / ((self.farm.plots.len() as u16) + 1),
         ));
         farm_horizontal_constraints.push(Constraint::Length(
-            100 / ((self.farm.plots.iter().count() as u16) + 1),
+            100 / ((self.farm.plots.len() as u16) + 1),
         ));
 
         // MARK: master layout
@@ -121,7 +121,7 @@ impl App {
                 if seeds.is_empty() {
                     inventory_seed_constraints.push(Constraint::Length(8));
                 }
-                for seed in seeds {
+                for _ in seeds {
                     inventory_seed_constraints
                         .push(Constraint::Fill(100 / seeds.iter().count() as u16))
                 }
@@ -134,7 +134,7 @@ impl App {
                 if crops.is_empty() {
                     inventory_crop_constraints.push(Constraint::Length(8));
                 }
-                for crop in crops {
+                for _ in crops {
                     inventory_crop_constraints
                         .push(Constraint::Fill(100 / crops.iter().count() as u16))
                 }
@@ -299,7 +299,7 @@ impl App {
                             );
                         }
                         let mut sorted: Vec<(&String, &u16)> = seeds.iter().collect::<Vec<_>>();
-                        sorted.sort_by(|a, b| a.0.cmp(&b.0));
+                        sorted.sort_by(|a, b| a.0.cmp(b.0));
                         for (i, (seed, amount)) in sorted.iter().enumerate() {
                             let registry = crop_registry();
                             frame.render_widget(
@@ -353,7 +353,7 @@ impl App {
                             );
                         }
                         let mut sorted: Vec<(&String, &u16)> = crops.iter().collect::<Vec<_>>();
-                        sorted.sort_by(|a, b| a.0.cmp(&b.0));
+                        sorted.sort_by(|a, b| a.0.cmp(b.0));
                         for (i, (crop, amount)) in sorted.iter().enumerate() {
                             let registry = crop_registry();
                             frame.render_widget(
