@@ -87,11 +87,13 @@ impl App {
             ));
         }
 
+        // MARK: master layout
         let master_layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints(vec![Constraint::Length(3), Constraint::Fill(1)])
             .split(frame.area());
 
+        // MARK: Farm tab layouts
         let farm_vertical_layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints(farm_vertical_constraints)
@@ -100,6 +102,16 @@ impl App {
             .direction(Direction::Horizontal)
             .constraints(farm_horizontal_constraints)
             .split(farm_vertical_layout[0]);
+
+        // MARK: Inventory tab layouts
+        let inventory_main_layout = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints(vec![
+                Constraint::Length(3),
+                Constraint::Fill(1),
+                Constraint::Fill(1),
+            ])
+            .split(master_layout[1]);
 
         match self.active_tab {
             Tabs::Farm => {
@@ -120,8 +132,10 @@ impl App {
                             let crop = &registry[&crop_id];
                             let elapsed = plot.planted_at.unwrap().elapsed().unwrap();
                             let remaining = crop.grow_time as i64 - elapsed.as_secs() as i64;
+                            let mut color = Color::White;
 
                             let dur = if remaining <= 0 {
+                                color = Color::Green;
                                 "ready to harvest".to_string()
                             } else {
                                 format_duration(Duration::from_secs(remaining as u64)).to_string()
@@ -133,6 +147,7 @@ impl App {
                                     .block(
                                         Block::new()
                                             .borders(Borders::ALL)
+                                            .border_style(Style::default().fg(color))
                                             .border_type(BorderType::Double),
                                     )
                                     .wrap(Wrap { trim: true }),
@@ -151,17 +166,28 @@ impl App {
                     };
                 }
             }
-            Tabs::Inventory => frame.render_widget(
-                Paragraph::new("Farm | [Inventory] | Market").block(
-                    Block::new()
-                        .borders(Borders::ALL)
-                        .border_style(Style::default().fg(Color::Green))
-                        .border_type(BorderType::Thick)
-                        .title_top(" termfarm ")
-                        .title_bottom(Line::from(NAVIGATION_TEXT).right_aligned()),
-                ),
-                master_layout[0],
-            ),
+            Tabs::Inventory => {
+                frame.render_widget(
+                    Paragraph::new("Farm | [Inventory] | Market").block(
+                        Block::new()
+                            .borders(Borders::ALL)
+                            .border_style(Style::default().fg(Color::Green))
+                            .border_type(BorderType::Thick)
+                            .title_top(" termfarm ")
+                            .title_bottom(Line::from(NAVIGATION_TEXT).right_aligned()),
+                    ),
+                    master_layout[0],
+                );
+                frame.render_widget(
+                    Paragraph::new(format!(" Coins: {}", self.farm.coins).yellow()).block(
+                        Block::new()
+                            .borders(Borders::ALL)
+                            .border_style(Style::default().fg(Color::Yellow))
+                            .border_type(BorderType::Double)
+                    ),
+                    inventory_main_layout[0]
+                )
+            },
             Tabs::Market => frame.render_widget(
                 Paragraph::new("Farm | Inventory | [Market]").block(
                     Block::new()
