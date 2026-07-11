@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::{crops::crop_registry, harvest_cmd, models::FarmState, persistence};
+use crate::{crops::crop_registry, harvest_cmd, models::FarmState, persistence, plot_pricing::next_plot_price};
 use humantime::format_duration;
 use ratatui_notifications::{Notification, Notifications, Level};
 use ratatui::{
@@ -80,12 +80,18 @@ impl App {
         let mut farm_horizontal_constraints: Vec<Constraint> = Vec::new();
         for _ in &self.farm.plots {
             farm_vertical_constraints.push(Constraint::Length(
-                100 / (self.farm.plots.iter().count() as u16),
+                100 / ((self.farm.plots.iter().count() as u16) + 1),
             ));
             farm_horizontal_constraints.push(Constraint::Length(
-                100 / (self.farm.plots.iter().count() as u16),
+                100 / ((self.farm.plots.iter().count() as u16) + 1),
             ));
         }
+        farm_vertical_constraints.push(Constraint::Length(
+            100 / ((self.farm.plots.iter().count() as u16) + 1),
+        ));
+        farm_horizontal_constraints.push(Constraint::Length(
+            100 / ((self.farm.plots.iter().count() as u16) + 1),
+        ));
 
         // MARK: master layout
         let master_layout = Layout::default()
@@ -158,6 +164,7 @@ impl App {
                     ),
                     master_layout[0],
                 );
+                let mut new_pos = 0;
                 for (i, plot) in self.farm.plots.iter().enumerate() {
                     match plot.planted_crop.clone() {
                         Some(crop_id) => {
@@ -184,19 +191,35 @@ impl App {
                                     )
                                     .wrap(Wrap { trim: true }),
                                 farm_horizontal_layout[i],
-                            )
+                            );
+
+                            new_pos += 1;
                         }
-                        None => frame.render_widget(
-                            Paragraph::new("<empty>".gray()).block(
-                                Block::new()
-                                    .borders(Borders::ALL)
-                                    .border_style(Style::default().fg(Color::Gray))
-                                    .border_type(BorderType::Double),
-                            ),
-                            farm_horizontal_layout[i],
-                        ),
+                        None => {
+                            frame.render_widget(
+                                Paragraph::new("<empty>".gray()).block(
+                                    Block::new()
+                                        .borders(Borders::ALL)
+                                        .border_style(Style::default().fg(Color::Gray))
+                                        .border_type(BorderType::Double),
+                                ),
+                                farm_horizontal_layout[i],
+                            );
+
+                            new_pos += 1
+                        },
                     };
                 }
+                frame.render_widget(
+                    Paragraph::new(format!("+\nBuy a new plot for {} coins", next_plot_price(self.farm.plots.len() as u16))).block(
+                        Block::new()
+                            .borders(Borders::ALL)
+                            .border_style(Style::default()).fg(Color::Green)
+                            .border_type(BorderType::Thick),
+                    )
+                    .wrap(Wrap { trim: true }),
+                    farm_horizontal_layout[new_pos],
+                )
             }
             Tabs::Inventory => {
                 frame.render_widget(
