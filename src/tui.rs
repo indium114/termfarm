@@ -3,14 +3,14 @@ use std::time::Duration;
 use crate::{crops::crop_registry, models::FarmState, persistence};
 use humantime::format_duration;
 use ratatui::{
-    DefaultTerminal, Frame,
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{Constraint, Direction, Layout},
     text::Line,
     widgets::{Block, BorderType, Borders, Paragraph, Wrap},
+    DefaultTerminal, Frame,
 };
 
-static NAVIGATION_TEXT: &str = " Move <Up/Down/Left/Right>, Change Tabs: <Tab/Shift+Tab> ";
+static NAVIGATION_TEXT: &str = " Move <Up/Down/Left/Right>, Change Tabs: <Tab/Shift+Tab>, Quit <q> ";
 
 pub fn run() {
     let _ = ratatui::run(|terminal| App::new().run(terminal));
