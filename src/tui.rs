@@ -104,6 +104,23 @@ impl App {
             .split(farm_vertical_layout[0]);
 
         // MARK: Inventory tab layouts
+        let mut inventory_seed_constraints: Vec<Constraint> = Vec::new();
+        let mut inventory_crop_constraints: Vec<Constraint> = Vec::new();
+
+        match &self.farm.inventory.seeds {
+            Some(seeds) => {
+                if seeds.is_empty() {
+                    inventory_seed_constraints.push(Constraint::Length(6));
+                }
+                for seed in seeds {
+                    inventory_seed_constraints.push(Constraint::Fill(
+                        100 / seeds.iter().count() as u16
+                    ))
+                }
+            }
+            None => inventory_seed_constraints.push(Constraint::Length(6))
+        }
+
         let inventory_main_layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints(vec![
@@ -112,6 +129,21 @@ impl App {
                 Constraint::Fill(1),
             ])
             .split(master_layout[1]);
+        let inventory_seeds_container = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints(vec![
+                Constraint::Length(1),
+                Constraint::Fill(1),
+            ])
+            .split(inventory_main_layout[1]);
+        let inventory_seeds_layout_vertical = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints(&inventory_seed_constraints)
+            .split(inventory_seeds_container[1]);
+        let inventory_seeds_layout_horizontal = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints(&inventory_seed_constraints)
+            .split(inventory_seeds_layout_vertical[0]);
 
         match self.active_tab {
             Tabs::Farm => {
@@ -186,7 +218,57 @@ impl App {
                             .border_type(BorderType::Double)
                     ),
                     inventory_main_layout[0]
-                )
+                );
+                match &self.farm.inventory.seeds {
+                    Some(seeds) => {
+                        frame.render_widget(
+                            Paragraph::new("").block(
+                            Block::new()
+                                  .borders(Borders::ALL)
+                                  .border_style(Style::default().fg(Color::Cyan))
+                                  .border_type(BorderType::Double)
+                                  .title_top(" 󰹢 Seeds: ")
+                            ),
+                            inventory_seeds_container[0]
+                        );
+                        if seeds.is_empty() {
+                            frame.render_widget(
+                                Paragraph::new("<none>".gray()).block(
+                                    Block::new()
+                                        .borders(Borders::ALL)
+                                        .border_style(Style::default().fg(Color::Gray))
+                                        .border_type(BorderType::Double)
+                                ),
+                                inventory_seeds_layout_horizontal[0]
+                            );
+                        }
+                        let mut sorted: Vec<(&String, &u16)> = seeds.iter().collect::<Vec<_>>();
+                        sorted.sort_by(|a, b| a.0.cmp(&b.0));
+                        for (i, (seed, amount)) in sorted.iter().enumerate() {
+                            let registry = crop_registry();
+                            frame.render_widget(
+                                Paragraph::new(format!("{} {amount}x {seed}", registry[*seed].icon)).block(
+                                    Block::new()
+                                        .borders(Borders::ALL)
+                                        .border_style(Style::default().fg(Color::Cyan))
+                                        .border_type(BorderType::Double)
+                                ),
+                                inventory_seeds_layout_horizontal[i]
+                            );
+                        }
+                    }
+                    None => {
+                        frame.render_widget(
+                            Paragraph::new("<none>".gray()).block(
+                                Block::new()
+                                    .borders(Borders::ALL)
+                                    .border_style(Style::default().fg(Color::Gray))
+                                    .border_type(BorderType::Double)
+                            ),
+                            inventory_seeds_layout_horizontal[0]
+                        );
+                    }
+                }
             },
             Tabs::Market => frame.render_widget(
                 Paragraph::new("Farm | Inventory | [Market]").block(
