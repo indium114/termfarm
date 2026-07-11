@@ -1,4 +1,4 @@
-use crate::{models::FarmState, persistence};
+use crate::{crops::crop_registry, models::FarmState, persistence};
 use ratatui::{
     DefaultTerminal, Frame,
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
@@ -61,11 +61,34 @@ impl App {
         Ok(())
     }
 
-    fn draw(&self, frame: &mut Frame) {
+    fn draw(&mut self, frame: &mut Frame) {
+        self.farm = persistence::load_farm();
+        let registry = crop_registry();
+
+        let mut farm_vertical_constraints: Vec<Constraint> = Vec::new();
+        let mut farm_horizontal_constraints: Vec<Constraint> = Vec::new();
+        for _ in &self.farm.plots {
+            farm_vertical_constraints.push(Constraint::Length(
+                100 / (self.farm.plots.iter().count() as u16),
+            ));
+            farm_horizontal_constraints.push(Constraint::Length(
+                100 / (self.farm.plots.iter().count() as u16),
+            ));
+        }
+
         let master_layout = Layout::default()
             .direction(Direction::Vertical)
-            .constraints(vec![Constraint::Length(3)])
+            .constraints(vec![Constraint::Length(3), Constraint::Fill(1)])
             .split(frame.area());
+
+        let farm_vertical_layout = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints(farm_vertical_constraints)
+            .split(master_layout[1]);
+        let farm_horizontal_layout = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints(farm_horizontal_constraints)
+            .split(farm_vertical_layout[0]);
 
         match self.active_tab {
             Tabs::Farm => {
@@ -81,6 +104,29 @@ impl App {
                     ),
                     master_layout[0],
                 );
+                for (i, plot) in self.farm.plots.iter().enumerate() {
+                    match plot.planted_crop.clone() {
+                        Some(crop) => {
+                            let text = format!("{} {}", crop, &registry[&crop].icon);
+                            frame.render_widget(
+                                Paragraph::new(text).block(
+                                    Block::new()
+                                        .borders(Borders::ALL)
+                                        .border_type(BorderType::Double),
+                                ),
+                                farm_horizontal_layout[i],
+                            )
+                        }
+                        None => frame.render_widget(
+                            Paragraph::new("<empty>").block(
+                                Block::new()
+                                    .borders(Borders::ALL)
+                                    .border_type(BorderType::Double),
+                            ),
+                            farm_horizontal_layout[i],
+                        ),
+                    };
+                }
             }
             Tabs::Inventory => frame.render_widget(
                 Paragraph::new("Farm | [Inventory] | Market").block(
