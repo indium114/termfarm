@@ -18,13 +18,13 @@ use crate::{
 };
 use humantime::format_duration;
 use ratatui::{
-    DefaultTerminal, Frame,
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{Constraint, Direction, Layout},
     prelude::Stylize,
     style::{Color, Style},
     text::Line,
     widgets::{Block, BorderType, Borders, Clear, Paragraph, Wrap},
+    DefaultTerminal, Frame,
 };
 use ratatui_notifications::{Level, Notification, Notifications};
 use ratatui_textarea::TextArea;
