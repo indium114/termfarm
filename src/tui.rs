@@ -90,22 +90,10 @@ impl App {
         self.farm = persistence::load_farm();
         let registry = crop_registry();
 
-        let mut farm_vertical_constraints: Vec<Constraint> = Vec::new();
-        let mut farm_horizontal_constraints: Vec<Constraint> = Vec::new();
-        for _ in &self.farm.plots {
-            farm_vertical_constraints.push(Constraint::Length(
-                100 / ((self.farm.plots.len() as u16) + 1),
-            ));
-            farm_horizontal_constraints.push(Constraint::Length(
-                100 / ((self.farm.plots.len() as u16) + 1),
-            ));
-        }
-        farm_vertical_constraints.push(Constraint::Length(
-            100 / ((self.farm.plots.len() as u16) + 1),
-        ));
-        farm_horizontal_constraints.push(Constraint::Length(
-            100 / ((self.farm.plots.len() as u16) + 1),
-        ));
+        let total_items = self.farm.plots.len() + 1;
+        let cols = (total_items as f64).sqrt().ceil() as usize;
+        let rows = (total_items as f64 / cols as f64).ceil() as usize;
+        let row_constraints: Vec<Constraint> = (0..rows).map(|_| Constraint::Fill(1)).collect();
 
         // MARK: master layout
         let master_layout = Layout::default()
@@ -114,14 +102,23 @@ impl App {
             .split(frame.area());
 
         // MARK: Farm tab layouts
-        let farm_vertical_layout = Layout::default()
+        let farm_rows = Layout::default()
             .direction(Direction::Vertical)
-            .constraints(farm_vertical_constraints)
+            .constraints(row_constraints)
             .split(master_layout[1]);
-        let farm_horizontal_layout = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints(farm_horizontal_constraints)
-            .split(farm_vertical_layout[0]);
+        let mut farm_grid: Vec<ratatui::layout::Rect> = Vec::with_capacity(total_items);
+        for r in 0..rows {
+            let items_this_row = std::cmp::min(cols, total_items - r * cols);
+            let col_constraints: Vec<Constraint> =
+                (0..items_this_row).map(|_| Constraint::Fill(1)).collect();
+            let row_layout = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints(col_constraints)
+                .split(farm_rows[r]);
+            for cell in row_layout.iter() {
+                farm_grid.push(*cell);
+            }
+        }
 
         // MARK: Inventory tab layouts
         let mut inventory_seed_constraints: Vec<Constraint> = Vec::new();
@@ -245,7 +242,7 @@ impl App {
                                             .border_type(BorderType::Double),
                                     )
                                     .wrap(Wrap { trim: true }),
-                                farm_horizontal_layout[i],
+                                farm_grid[i],
                             );
 
                             new_pos += 1;
@@ -258,7 +255,7 @@ impl App {
                                         .border_style(Style::default().fg(Color::Gray))
                                         .border_type(BorderType::Double),
                                 ),
-                                farm_horizontal_layout[i],
+                                farm_grid[i],
                             );
 
                             new_pos += 1
@@ -278,7 +275,7 @@ impl App {
                             .border_type(BorderType::Thick),
                     )
                     .wrap(Wrap { trim: true }),
-                    farm_horizontal_layout[new_pos],
+                    farm_grid[new_pos],
                 )
             }
             // MARK: Inventory tab rendering
