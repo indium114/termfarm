@@ -5,11 +5,23 @@ pub fn save_path() -> String {
     let home = dirs::home_dir()
         .map(|p| p.to_string_lossy().into_owned())
         .unwrap_or_default();
+
+    #[cfg(target_os = "linux")]
     let dir = home + "/.local/share/termfarm";
+
+    #[cfg(target_os = "macos")]
+    let dir = home + "/.local/share/termfarm";
+
+    #[cfg(target_os = "windows")]
+    let dir = home + "\\AppData\\Roaming\\termfarm";
 
     _ = fs::create_dir_all(&dir);
 
-    dir + "/save.json"
+    #[cfg(not(target_os = "windows"))]
+    return dir + "/save.json";
+
+    #[cfg(target_os = "windows")]
+    return dir + "\\save.json";
 }
 
 pub fn load_farm() -> FarmState {
