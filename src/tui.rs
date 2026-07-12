@@ -1,8 +1,8 @@
 use std::{collections::HashMap, time::Duration};
 
 use crate::{
-    crops::crop_registry, harvest_cmd, models::FarmState, persistence,
-    plot_pricing::next_plot_price, sell::sell_crop,
+    crops::crop_registry, harvest_cmd, market::buy_price, models::FarmState, persistence,
+    plot_pricing::next_plot_price, sell::sell_crop, stats::compute_stats,
 };
 use humantime::format_duration;
 use ratatui::{
@@ -174,6 +174,19 @@ impl App {
             .direction(Direction::Horizontal)
             .constraints(&inventory_crop_constraints)
             .split(inventory_crops_layout_vertical[0]);
+
+        // MARK: Market tab layouts
+        let market_main_layout = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints(vec![
+                Constraint::Length(3),
+                Constraint::Length(3),
+                Constraint::Length(1),
+                Constraint::Fill(1),
+                Constraint::Fill(1),
+                Constraint::Fill(1),
+            ])
+            .split(master_layout[1]);
 
         match self.active_tab {
             // MARK: Farm tab rendering
@@ -389,17 +402,98 @@ impl App {
                 }
             }
             // MARK: Market tab rendering
-            Tabs::Market => frame.render_widget(
-                Paragraph::new("Farm | Inventory | [Market]").block(
-                    Block::new()
-                        .borders(Borders::ALL)
-                        .border_style(Style::default().fg(Color::Green))
-                        .border_type(BorderType::Thick)
-                        .title_top(" termfarm ")
-                        .title_bottom(Line::from(NAVIGATION_TEXT).right_aligned()),
-                ),
-                master_layout[0],
-            ),
+            Tabs::Market => {
+                let stats = compute_stats(&self.farm);
+
+                frame.render_widget(
+                    Paragraph::new("Farm | Inventory | [Market]").block(
+                        Block::new()
+                            .borders(Borders::ALL)
+                            .border_style(Style::default().fg(Color::Green))
+                            .border_type(BorderType::Thick)
+                            .title_top(" termfarm ")
+                            .title_bottom(
+                                Line::from(" Buy seed <1/2/3>,".to_string() + NAVIGATION_TEXT)
+                                    .right_aligned(),
+                            ),
+                    ),
+                    master_layout[0],
+                );
+                frame.render_widget(
+                    Paragraph::new(format!(" Coins: {}", self.farm.coins).yellow()).block(
+                        Block::new()
+                            .borders(Borders::ALL)
+                            .border_style(Style::default().fg(Color::Yellow))
+                            .border_type(BorderType::Double),
+                    ),
+                    market_main_layout[0],
+                );
+                frame.render_widget(
+                    Paragraph::new(
+                        format!(
+                            "󰑓 Rotates In: {}",
+                            format_duration(Duration::from_secs(
+                                stats.next_market_rotation_in.as_secs()
+                            ))
+                        )
+                        .magenta(),
+                    )
+                    .block(
+                        Block::new()
+                            .borders(Borders::ALL)
+                            .border_style(Style::default().fg(Color::Magenta))
+                            .border_type(BorderType::Double),
+                    ),
+                    market_main_layout[1],
+                );
+                frame.render_widget(
+                    Paragraph::new("").block(
+                        Block::new()
+                            .title_top(" 󰹢 Seeds: ")
+                            .borders(Borders::ALL)
+                            .border_style(Style::default().fg(Color::Cyan))
+                            .border_type(BorderType::Double),
+                    ),
+                    market_main_layout[2],
+                );
+
+                for (i, seed) in self.farm.market.available_seeds.clone().iter().enumerate() {
+                    let crop = &registry[seed];
+                    let price = buy_price(seed.to_string(), &self.farm);
+                    let modifier = &self.farm.market.price_modifiers[seed] - 1.0;
+
+                    let trend = {
+                        if modifier > 0.0 {
+                            "󰔵"
+                        } else if modifier < 0.0 {
+                            "󰔳"
+                        } else {
+                            "󰔴"
+                        }
+                    };
+                    let pct = format!("{:.0}%", modifier * 100.0);
+
+                    let final_text = format!(
+                        "({}) {} {}\n{} coins\n({} {})",
+                        i + 1,
+                        crop.icon,
+                        crop.id,
+                        price,
+                        trend,
+                        pct
+                    );
+
+                    frame.render_widget(
+                        Paragraph::new(final_text).block(
+                            Block::new()
+                                .borders(Borders::ALL)
+                                .border_style(Style::default().fg(Color::Cyan))
+                                .border_type(BorderType::Double),
+                        ),
+                        market_main_layout[i + 3],
+                    );
+                }
+            }
         }
 
         self.notifications.tick(Duration::from_millis(16));
