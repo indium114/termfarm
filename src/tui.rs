@@ -11,6 +11,7 @@ use crate::{
     market::buy_price,
     models::{FarmState, Plot},
     persistence::{self, save_farm},
+    plant_cmd::plant,
     plot_pricing::next_plot_price,
     sell::sell_crop,
     stats::compute_stats,
@@ -23,9 +24,10 @@ use ratatui::{
     prelude::Stylize,
     style::{Color, Style},
     text::Line,
-    widgets::{Block, BorderType, Borders, Paragraph, Wrap},
+    widgets::{Block, BorderType, Borders, Clear, Paragraph, Wrap},
 };
 use ratatui_notifications::{Level, Notification, Notifications};
+use ratatui_textarea::TextArea;
 use uuid::Uuid;
 
 static NAVIGATION_TEXT: &str = " Change Tabs: <Tab/Shift+Tab>, Quit <q> ";
@@ -46,6 +48,8 @@ pub struct App {
     running: bool,
     farm: FarmState,
     notifications: Notifications,
+    plant_popup: bool,
+    input: String,
 }
 
 impl App {
@@ -55,6 +59,8 @@ impl App {
             running: true,
             farm: persistence::load_farm(),
             notifications: Notifications::new(),
+            plant_popup: false,
+            input: "".to_string(),
         }
     }
 
@@ -76,17 +82,20 @@ impl App {
     }
 
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> std::io::Result<()> {
+        let mut textarea = TextArea::default();
+        textarea.set_placeholder_text("seed to plant (e.g. avocado)");
+
         while self.running {
             terminal.draw(|frame| {
-                self.draw(frame);
+                self.draw(frame, &mut textarea);
             })?;
-            self.keybinds()?;
+            self.keybinds(&mut textarea)?;
         }
 
         Ok(())
     }
 
-    fn draw(&mut self, frame: &mut Frame) {
+    fn draw(&mut self, frame: &mut Frame, textarea: &mut TextArea) {
         self.farm = persistence::load_farm();
         let registry = crop_registry();
 
@@ -276,7 +285,27 @@ impl App {
                     )
                     .wrap(Wrap { trim: true }),
                     farm_grid[new_pos],
-                )
+                );
+
+                if self.plant_popup {
+                    let popup_area = frame
+                        .area()
+                        .centered(Constraint::Percentage(30), Constraint::Length(3));
+                    frame.render_widget(Clear, popup_area);
+                    textarea.set_block(
+                        Block::new()
+                            .borders(Borders::ALL)
+                            .border_style(Style::default().fg(Color::Cyan))
+                            .border_type(BorderType::Double),
+                    );
+                    frame.render_widget(&*textarea, popup_area);
+                    self.input = textarea
+                        .lines()
+                        .join(" ")
+                        .trim_end()
+                        .to_lowercase()
+                        .to_string();
+                }
             }
             // MARK: Inventory tab rendering
             Tabs::Inventory => {
@@ -511,7 +540,7 @@ impl App {
         self.notifications.render(frame, frame.area());
     }
 
-    fn keybinds(&mut self) -> std::io::Result<()> {
+    fn keybinds(&mut self, textarea: &mut TextArea) -> std::io::Result<()> {
         let tick_rate = Duration::from_millis(1);
 
         if event::poll(tick_rate)? {
@@ -522,9 +551,11 @@ impl App {
                             persistence::save_farm(&self.farm);
                             self.running = false
                         }
-                        KeyCode::Tab => self.tab(false),
-                        KeyCode::BackTab => self.tab(true),
-                        KeyCode::Char('h') if self.active_tab == Tabs::Farm => {
+                        KeyCode::Tab if !self.plant_popup => self.tab(false),
+                        KeyCode::BackTab if !self.plant_popup => self.tab(true),
+                        KeyCode::Char('h')
+                            if self.active_tab == Tabs::Farm && !self.plant_popup =>
+                        {
                             let text = harvest_cmd::harvest(false);
                             let notif = Notification::new(text)
                                 .title(" Harvested:")
@@ -568,7 +599,9 @@ impl App {
                             let notif = Notification::new(output).title(" Bought").build().unwrap();
                             self.notifications.add(notif).unwrap();
                         }
-                        KeyCode::Char('n') if self.active_tab == Tabs::Farm => {
+                        KeyCode::Char('n')
+                            if self.active_tab == Tabs::Farm && !self.plant_popup =>
+                        {
                             let current_plots = self.farm.plots.len();
                             let price = next_plot_price(current_plots as u16);
 
@@ -597,6 +630,27 @@ impl App {
                                     }
                                 }
                             }
+                        }
+                        KeyCode::Char('p')
+                            if self.active_tab == Tabs::Farm && !self.plant_popup =>
+                        {
+                            self.plant_popup = true
+                        }
+                        KeyCode::Esc if self.plant_popup => self.plant_popup = false,
+                        KeyCode::Enter if self.plant_popup => {
+                            self.plant_popup = false;
+                            textarea.clear();
+
+                            let output = plant(self.input.clone(), false);
+                            let notif = Notification::new(output)
+                                .title(" Planted")
+                                .level(Level::Info)
+                                .build()
+                                .unwrap();
+                            self.notifications.add(notif).unwrap();
+                        }
+                        _ if self.plant_popup => {
+                            textarea.input(key_event);
                         }
                         _ => {}
                     }

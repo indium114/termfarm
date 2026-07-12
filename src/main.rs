@@ -85,7 +85,7 @@ fn main() {
             buy_cmd::buy(seed_id.to_string(), *amount, true);
         }
         Commands::Plant { seed_id } => {
-            plant_cmd::plant(seed_id.to_string());
+            plant_cmd::plant(seed_id.to_string(), true);
         }
         Commands::Harvest => {
             harvest_cmd::harvest(true);
