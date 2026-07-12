@@ -639,7 +639,6 @@ impl App {
                         KeyCode::Esc if self.plant_popup => self.plant_popup = false,
                         KeyCode::Enter if self.plant_popup => {
                             self.plant_popup = false;
-                            textarea.clear();
 
                             let output = plant(self.input.clone(), false);
                             let notif = Notification::new(output)
