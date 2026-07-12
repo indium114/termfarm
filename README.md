@@ -1,8 +1,18 @@
 # termfarm
 
+![A terminal window showing the main screen of termfarm](assets/preview.png)
+
 **termfarm** is a simple CLI idle farming game written in *Rust*.
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/indium114/termfarm)
+
+## How to play
+
+Simply running `termfarm` without any arguments will bring up the TUI interface, made with [ratatui](https://ratatui.rs).
+
+All of the keybinds will be displayed at the top-right of the screen, dynamically changing based on the tab you're on.
+
+There is also a regular command-line interface, run `termfarm --help` to learn how to use it.
 
 ## Features
 
