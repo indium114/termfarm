@@ -22,6 +22,7 @@ pub fn init() {
         },
         market: generate_market(),
         last_updated: SystemTime::now(),
+        has_seen_tutorial: false,
     };
 
     match save_farm(&farm) {

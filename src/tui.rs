@@ -8,7 +8,7 @@ use crate::{
     buy_cmd::buy,
     crops::crop_registry,
     harvest_cmd,
-    market::buy_price,
+    market::market_listing,
     models::{FarmState, Plot},
     persistence::{self, save_farm},
     plant_cmd::plant,
@@ -18,19 +18,42 @@ use crate::{
 };
 use humantime::format_duration;
 use ratatui::{
+    DefaultTerminal, Frame,
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{Constraint, Direction, Layout},
     prelude::Stylize,
-    style::{Color, Style},
-    text::Line,
+    style::{Color, Modifier, Style},
+    text::{Line, Span, Text},
     widgets::{Block, BorderType, Borders, Clear, Paragraph, Wrap},
-    DefaultTerminal, Frame,
 };
 use ratatui_notifications::{Level, Notification, Notifications};
 use ratatui_textarea::TextArea;
 use uuid::Uuid;
 
 static NAVIGATION_TEXT: &str = " Change Tabs: <Tab/Shift+Tab>, Quit <q> ";
+static TUTORIAL_TEXT: &str = "
+Welcome to termfarm!
+
+Basic controls:
+- <Tab/Shift+Tab> Move between tabs (the current tab is shown at the top-left)
+- <q> Quit
+
+Farm controls:
+- <p> Plant a crop in the first open plot
+- <h> Harvest all mature crops
+- <n> Purchase a new plot
+
+Inventory controls:
+- <s> Sell harvested crops
+
+Market controls:
+- <1> Buy seed 1
+- <2> Buy seed 2
+- <3> Buy seed 3
+
+> Have fun :D
+Press <esc> to close this tutorial
+";
 
 pub fn run() {
     let _ = ratatui::run(|terminal| App::new().run(terminal));
@@ -81,7 +104,10 @@ impl App {
         }
     }
 
-    pub fn run(&mut self, terminal: &mut DefaultTerminal) -> std::io::Result<()> {
+    pub fn run(
+        &mut self,
+        terminal: &mut DefaultTerminal,
+    ) -> std::io::Result<()> {
         let mut textarea = TextArea::default();
         textarea.set_placeholder_text("seed to plant (e.g. avocado)");
 
@@ -102,7 +128,8 @@ impl App {
         let total_items = self.farm.plots.len() + 1;
         let cols = (total_items as f64).sqrt().ceil() as usize;
         let rows = (total_items as f64 / cols as f64).ceil() as usize;
-        let row_constraints: Vec<Constraint> = (0..rows).map(|_| Constraint::Fill(1)).collect();
+        let row_constraints: Vec<Constraint> =
+            (0..rows).map(|_| Constraint::Fill(1)).collect();
 
         // MARK: master layout
         let master_layout = Layout::default()
@@ -115,7 +142,8 @@ impl App {
             .direction(Direction::Vertical)
             .constraints(row_constraints)
             .split(master_layout[1]);
-        let mut farm_grid: Vec<ratatui::layout::Rect> = Vec::with_capacity(total_items);
+        let mut farm_grid: Vec<ratatui::layout::Rect> =
+            Vec::with_capacity(total_items);
         for r in 0..rows {
             let items_this_row = std::cmp::min(cols, total_items - r * cols);
             let col_constraints: Vec<Constraint> =
@@ -139,8 +167,9 @@ impl App {
                     inventory_seed_constraints.push(Constraint::Length(8));
                 }
                 for _ in seeds {
-                    inventory_seed_constraints
-                        .push(Constraint::Fill(100 / seeds.iter().count() as u16))
+                    inventory_seed_constraints.push(Constraint::Fill(
+                        100 / seeds.iter().count() as u16,
+                    ))
                 }
             }
             None => inventory_seed_constraints.push(Constraint::Length(8)),
@@ -152,8 +181,9 @@ impl App {
                     inventory_crop_constraints.push(Constraint::Length(8));
                 }
                 for _ in crops {
-                    inventory_crop_constraints
-                        .push(Constraint::Fill(100 / crops.iter().count() as u16))
+                    inventory_crop_constraints.push(Constraint::Fill(
+                        100 / crops.iter().count() as u16,
+                    ))
                 }
             }
             None => inventory_crop_constraints.push(Constraint::Length(8)),
@@ -218,7 +248,9 @@ impl App {
                             .title_top(" termfarm ")
                             .title_bottom(
                                 Line::from(
-                                    " Harvest <h>, Buy new Plot <n>,".to_string() + NAVIGATION_TEXT,
+                                    " Harvest <h>, Buy new Plot <n>,"
+                                        .to_string()
+                                        + NAVIGATION_TEXT,
                                 )
                                 .right_aligned(),
                             ),
@@ -230,24 +262,32 @@ impl App {
                     match plot.planted_crop.clone() {
                         Some(crop_id) => {
                             let crop = &registry[&crop_id];
-                            let elapsed = plot.planted_at.unwrap().elapsed().unwrap();
-                            let remaining = crop.grow_time as i64 - elapsed.as_secs() as i64;
+                            let elapsed =
+                                plot.planted_at.unwrap().elapsed().unwrap();
+                            let remaining = crop.grow_time as i64
+                                - elapsed.as_secs() as i64;
                             let mut color = Color::White;
 
                             let dur = if remaining <= 0 {
                                 color = Color::Green;
                                 "ready to harvest".to_string()
                             } else {
-                                format_duration(Duration::from_secs(remaining as u64)).to_string()
+                                format_duration(Duration::from_secs(
+                                    remaining as u64,
+                                ))
+                                .to_string()
                                     + " remaining"
                             };
-                            let text = format!("{} {}\n{}", crop.id, crop.icon, dur,);
+                            let text =
+                                format!("{} {}\n{}", crop.id, crop.icon, dur,);
                             frame.render_widget(
                                 Paragraph::new(text)
                                     .block(
                                         Block::new()
                                             .borders(Borders::ALL)
-                                            .border_style(Style::default().fg(color))
+                                            .border_style(
+                                                Style::default().fg(color),
+                                            )
                                             .border_type(BorderType::Double),
                                     )
                                     .wrap(Wrap { trim: true }),
@@ -261,7 +301,9 @@ impl App {
                                 Paragraph::new("<empty>".gray()).block(
                                     Block::new()
                                         .borders(Borders::ALL)
-                                        .border_style(Style::default().fg(Color::Gray))
+                                        .border_style(
+                                            Style::default().fg(Color::Gray),
+                                        )
                                         .border_type(BorderType::Double),
                                 ),
                                 farm_grid[i],
@@ -288,9 +330,10 @@ impl App {
                 );
 
                 if self.plant_popup {
-                    let popup_area = frame
-                        .area()
-                        .centered(Constraint::Percentage(30), Constraint::Length(3));
+                    let popup_area = frame.area().centered(
+                        Constraint::Percentage(30),
+                        Constraint::Length(3),
+                    );
                     frame.render_widget(Clear, popup_area);
                     textarea.set_block(
                         Block::new()
@@ -306,6 +349,23 @@ impl App {
                         .to_lowercase()
                         .to_string();
                 }
+
+                if !self.farm.has_seen_tutorial {
+                    let popup_area = frame.area().centered(
+                        Constraint::Percentage(50),
+                        Constraint::Percentage(50),
+                    );
+                    frame.render_widget(Clear, popup_area);
+                    frame.render_widget(
+                        Paragraph::new(TUTORIAL_TEXT).block(
+                            Block::new()
+                                .borders(Borders::ALL)
+                                .border_style(Style::default().fg(Color::Cyan))
+                                .border_type(BorderType::Double),
+                        ),
+                        popup_area,
+                    );
+                }
             }
             // MARK: Inventory tab rendering
             Tabs::Inventory => {
@@ -317,14 +377,20 @@ impl App {
                             .border_type(BorderType::Thick)
                             .title_top(" termfarm ")
                             .title_bottom(
-                                Line::from(" Sell crops <s>,".to_string() + NAVIGATION_TEXT)
-                                    .right_aligned(),
+                                Line::from(
+                                    " Sell crops <s>,".to_string()
+                                        + NAVIGATION_TEXT,
+                                )
+                                .right_aligned(),
                             ),
                     ),
                     master_layout[0],
                 );
                 frame.render_widget(
-                    Paragraph::new(format!(" Coins: {}", self.farm.coins).yellow()).block(
+                    Paragraph::new(
+                        format!(" Coins: {}", self.farm.coins).yellow(),
+                    )
+                    .block(
                         Block::new()
                             .borders(Borders::ALL)
                             .border_style(Style::default().fg(Color::Yellow))
@@ -338,7 +404,9 @@ impl App {
                             Paragraph::new("").block(
                                 Block::new()
                                     .borders(Borders::ALL)
-                                    .border_style(Style::default().fg(Color::Cyan))
+                                    .border_style(
+                                        Style::default().fg(Color::Cyan),
+                                    )
                                     .border_type(BorderType::Double)
                                     .title_top(" 󰹢 Seeds: "),
                             ),
@@ -349,13 +417,16 @@ impl App {
                                 Paragraph::new("<none>".gray()).block(
                                     Block::new()
                                         .borders(Borders::ALL)
-                                        .border_style(Style::default().fg(Color::Gray))
+                                        .border_style(
+                                            Style::default().fg(Color::Gray),
+                                        )
                                         .border_type(BorderType::Double),
                                 ),
                                 inventory_seeds_layout_horizontal[0],
                             );
                         }
-                        let mut sorted: Vec<(&String, &u16)> = seeds.iter().collect::<Vec<_>>();
+                        let mut sorted: Vec<(&String, &u16)> =
+                            seeds.iter().collect::<Vec<_>>();
                         sorted.sort_by(|a, b| a.0.cmp(b.0));
                         for (i, (seed, amount)) in sorted.iter().enumerate() {
                             let registry = crop_registry();
@@ -367,7 +438,9 @@ impl App {
                                 .block(
                                     Block::new()
                                         .borders(Borders::ALL)
-                                        .border_style(Style::default().fg(Color::Cyan))
+                                        .border_style(
+                                            Style::default().fg(Color::Cyan),
+                                        )
                                         .border_type(BorderType::Double),
                                 ),
                                 inventory_seeds_layout_horizontal[i],
@@ -379,7 +452,9 @@ impl App {
                             Paragraph::new("<none>".gray()).block(
                                 Block::new()
                                     .borders(Borders::ALL)
-                                    .border_style(Style::default().fg(Color::Gray))
+                                    .border_style(
+                                        Style::default().fg(Color::Gray),
+                                    )
                                     .border_type(BorderType::Double),
                             ),
                             inventory_seeds_layout_horizontal[0],
@@ -392,7 +467,9 @@ impl App {
                             Paragraph::new("").block(
                                 Block::new()
                                     .borders(Borders::ALL)
-                                    .border_style(Style::default().fg(Color::Cyan))
+                                    .border_style(
+                                        Style::default().fg(Color::Cyan),
+                                    )
                                     .border_type(BorderType::Double)
                                     .title_top("  Crops: "),
                             ),
@@ -403,13 +480,16 @@ impl App {
                                 Paragraph::new("<none>".gray()).block(
                                     Block::new()
                                         .borders(Borders::ALL)
-                                        .border_style(Style::default().fg(Color::Gray))
+                                        .border_style(
+                                            Style::default().fg(Color::Gray),
+                                        )
                                         .border_type(BorderType::Double),
                                 ),
                                 inventory_crops_layout_horizontal[0],
                             );
                         }
-                        let mut sorted: Vec<(&String, &u16)> = crops.iter().collect::<Vec<_>>();
+                        let mut sorted: Vec<(&String, &u16)> =
+                            crops.iter().collect::<Vec<_>>();
                         sorted.sort_by(|a, b| a.0.cmp(b.0));
                         for (i, (crop, amount)) in sorted.iter().enumerate() {
                             let registry = crop_registry();
@@ -421,7 +501,9 @@ impl App {
                                 .block(
                                     Block::new()
                                         .borders(Borders::ALL)
-                                        .border_style(Style::default().fg(Color::Cyan))
+                                        .border_style(
+                                            Style::default().fg(Color::Cyan),
+                                        )
                                         .border_type(BorderType::Double),
                                 ),
                                 inventory_crops_layout_horizontal[i],
@@ -433,7 +515,9 @@ impl App {
                             Paragraph::new("<none>".gray()).block(
                                 Block::new()
                                     .borders(Borders::ALL)
-                                    .border_style(Style::default().fg(Color::Gray))
+                                    .border_style(
+                                        Style::default().fg(Color::Gray),
+                                    )
                                     .border_type(BorderType::Double),
                             ),
                             inventory_crops_layout_horizontal[0],
@@ -453,14 +537,20 @@ impl App {
                             .border_type(BorderType::Thick)
                             .title_top(" termfarm ")
                             .title_bottom(
-                                Line::from(" Buy seed <1/2/3>,".to_string() + NAVIGATION_TEXT)
-                                    .right_aligned(),
+                                Line::from(
+                                    " Buy seed <1/2/3>,".to_string()
+                                        + NAVIGATION_TEXT,
+                                )
+                                .right_aligned(),
                             ),
                     ),
                     master_layout[0],
                 );
                 frame.render_widget(
-                    Paragraph::new(format!(" Coins: {}", self.farm.coins).yellow()).block(
+                    Paragraph::new(
+                        format!(" Coins: {}", self.farm.coins).yellow(),
+                    )
+                    .block(
                         Block::new()
                             .borders(Borders::ALL)
                             .border_style(Style::default().fg(Color::Yellow))
@@ -497,10 +587,12 @@ impl App {
                     market_main_layout[2],
                 );
 
-                for (i, seed) in self.farm.market.available_seeds.clone().iter().enumerate() {
+                for (i, seed) in
+                    self.farm.market.available_seeds.clone().iter().enumerate()
+                {
                     let crop = &registry[seed];
-                    let price = buy_price(seed.to_string(), &self.farm);
-                    let modifier = &self.farm.market.price_modifiers[seed] - 1.0;
+                    let listing = market_listing(seed.to_string(), &self.farm);
+                    let modifier = listing.modifier - 1.0;
 
                     let trend = {
                         if modifier > 0.0 {
@@ -513,15 +605,42 @@ impl App {
                     };
                     let pct = format!("{:.0}%", modifier * 100.0);
 
-                    let final_text = format!(
-                        "({}) {} {}\n{} coins\n({} {})",
-                        i + 1,
-                        crop.icon,
-                        crop.id,
-                        price,
-                        trend,
-                        pct
-                    );
+                    let buy_line = if listing.buy_price
+                        != listing.base_buy_price
+                    {
+                        Line::from(vec![
+                            Span::from("Buy: "),
+                            Span::styled(
+                                format!("{}", listing.base_buy_price),
+                                Style::default()
+                                    .fg(Color::DarkGray)
+                                    .add_modifier(Modifier::CROSSED_OUT),
+                            ),
+                            Span::from(format!(" {} coins", listing.buy_price)),
+                        ])
+                    } else {
+                        Line::from(format!("Buy: {} coins", listing.buy_price))
+                    };
+
+                    let grow_time = format_duration(Duration::from_secs(
+                        listing.grow_time as u64,
+                    ));
+
+                    let final_text = Text::from(vec![
+                        Line::from(format!(
+                            "({}) {} {}",
+                            i + 1,
+                            crop.icon,
+                            crop.id
+                        )),
+                        buy_line,
+                        Line::from(format!(
+                            "Sell: {} coins",
+                            listing.sell_price
+                        )),
+                        Line::from(format!("Grow: {}", grow_time)),
+                        Line::from(format!("({} {})", trend, pct)),
+                    ]);
 
                     frame.render_widget(
                         Paragraph::new(final_text).block(
@@ -545,7 +664,9 @@ impl App {
 
         if event::poll(tick_rate)? {
             match event::read()? {
-                Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
+                Event::Key(key_event)
+                    if key_event.kind == KeyEventKind::Press =>
+                {
                     match key_event.code {
                         KeyCode::Char('q') => {
                             persistence::save_farm(&self.farm);
@@ -554,7 +675,8 @@ impl App {
                         KeyCode::Tab if !self.plant_popup => self.tab(false),
                         KeyCode::BackTab if !self.plant_popup => self.tab(true),
                         KeyCode::Char('h')
-                            if self.active_tab == Tabs::Farm && !self.plant_popup =>
+                            if self.active_tab == Tabs::Farm
+                                && !self.plant_popup =>
                         {
                             let text = harvest_cmd::harvest(false);
                             let notif = Notification::new(text)
@@ -565,53 +687,96 @@ impl App {
 
                             self.notifications.add(notif).unwrap();
                         }
-                        KeyCode::Char('s') if self.active_tab == Tabs::Inventory => {
-                            let crops = self.farm.inventory.crops.get_or_insert_with(HashMap::new);
+                        KeyCode::Char('s')
+                            if self.active_tab == Tabs::Inventory =>
+                        {
+                            let crops = self
+                                .farm
+                                .inventory
+                                .crops
+                                .get_or_insert_with(HashMap::new);
                             if crops.is_empty() {
-                                let notif = Notification::new("You don't have any crops to sell")
-                                    .title(" No crops to sell!")
-                                    .level(Level::Warn)
-                                    .build()
-                                    .unwrap();
+                                let notif = Notification::new(
+                                    "You don't have any crops to sell",
+                                )
+                                .title(" No crops to sell!")
+                                .level(Level::Warn)
+                                .build()
+                                .unwrap();
 
                                 self.notifications.add(notif).unwrap();
                             } else {
                                 for (crop_id, amount) in crops {
-                                    let output = sell_crop(crop_id.to_string(), *amount, false);
-                                    let notif =
-                                        Notification::new(output).title(" Sold").build().unwrap();
+                                    let output = sell_crop(
+                                        crop_id.to_string(),
+                                        *amount,
+                                        false,
+                                    );
+                                    let notif = Notification::new(output)
+                                        .title(" Sold")
+                                        .build()
+                                        .unwrap();
                                     self.notifications.add(notif).unwrap();
                                 }
                             }
                         }
-                        KeyCode::Char('1') if self.active_tab == Tabs::Market => {
-                            let output = buy(self.farm.market.available_seeds[0].clone(), 1, false);
-                            let notif = Notification::new(output).title(" Bought").build().unwrap();
+                        KeyCode::Char('1')
+                            if self.active_tab == Tabs::Market =>
+                        {
+                            let output = buy(
+                                self.farm.market.available_seeds[0].clone(),
+                                1,
+                                false,
+                            );
+                            let notif = Notification::new(output)
+                                .title(" Bought")
+                                .build()
+                                .unwrap();
                             self.notifications.add(notif).unwrap();
                         }
-                        KeyCode::Char('2') if self.active_tab == Tabs::Market => {
-                            let output = buy(self.farm.market.available_seeds[1].clone(), 1, false);
-                            let notif = Notification::new(output).title(" Bought").build().unwrap();
+                        KeyCode::Char('2')
+                            if self.active_tab == Tabs::Market =>
+                        {
+                            let output = buy(
+                                self.farm.market.available_seeds[1].clone(),
+                                1,
+                                false,
+                            );
+                            let notif = Notification::new(output)
+                                .title(" Bought")
+                                .build()
+                                .unwrap();
                             self.notifications.add(notif).unwrap();
                         }
-                        KeyCode::Char('3') if self.active_tab == Tabs::Market => {
-                            let output = buy(self.farm.market.available_seeds[2].clone(), 1, false);
-                            let notif = Notification::new(output).title(" Bought").build().unwrap();
+                        KeyCode::Char('3')
+                            if self.active_tab == Tabs::Market =>
+                        {
+                            let output = buy(
+                                self.farm.market.available_seeds[2].clone(),
+                                1,
+                                false,
+                            );
+                            let notif = Notification::new(output)
+                                .title(" Bought")
+                                .build()
+                                .unwrap();
                             self.notifications.add(notif).unwrap();
                         }
                         KeyCode::Char('n')
-                            if self.active_tab == Tabs::Farm && !self.plant_popup =>
+                            if self.active_tab == Tabs::Farm
+                                && !self.plant_popup =>
                         {
                             let current_plots = self.farm.plots.len();
                             let price = next_plot_price(current_plots as u16);
 
                             if self.farm.coins < price as u32 {
-                                let notif =
-                                    Notification::new("Not enough coins to purchase a new plot!")
-                                        .title(" Not enough coins")
-                                        .level(Level::Warn)
-                                        .build()
-                                        .unwrap();
+                                let notif = Notification::new(
+                                    "Not enough coins to purchase a new plot!",
+                                )
+                                .title(" Not enough coins")
+                                .level(Level::Warn)
+                                .build()
+                                .unwrap();
                                 self.notifications.add(notif).unwrap();
                             } else {
                                 self.farm.coins -= price as u32;
@@ -632,11 +797,14 @@ impl App {
                             }
                         }
                         KeyCode::Char('p')
-                            if self.active_tab == Tabs::Farm && !self.plant_popup =>
+                            if self.active_tab == Tabs::Farm
+                                && !self.plant_popup =>
                         {
                             self.plant_popup = true
                         }
-                        KeyCode::Esc if self.plant_popup => self.plant_popup = false,
+                        KeyCode::Esc if self.plant_popup => {
+                            self.plant_popup = false
+                        }
                         KeyCode::Enter if self.plant_popup => {
                             self.plant_popup = false;
 
@@ -650,6 +818,10 @@ impl App {
                         }
                         _ if self.plant_popup => {
                             textarea.input(key_event);
+                        }
+                        KeyCode::Esc if !self.farm.has_seen_tutorial => {
+                            self.farm.has_seen_tutorial = true;
+                            save_farm(&self.farm);
                         }
                         _ => {}
                     }
