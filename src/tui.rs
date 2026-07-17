@@ -8,7 +8,7 @@ use crate::{
     buy_cmd::buy,
     crops::crop_registry,
     harvest_cmd,
-    market::buy_price,
+    market::market_listing,
     models::{FarmState, Plot},
     persistence::{self, save_farm},
     plant_cmd::plant,
@@ -22,8 +22,8 @@ use ratatui::{
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{Constraint, Direction, Layout},
     prelude::Stylize,
-    style::{Color, Style},
-    text::Line,
+    style::{Color, Modifier, Style},
+    text::{Line, Span, Text},
     widgets::{Block, BorderType, Borders, Clear, Paragraph, Wrap},
 };
 use ratatui_notifications::{Level, Notification, Notifications};
@@ -606,15 +606,31 @@ impl App {
                     };
                     let pct = format!("{:.0}%", modifier * 100.0);
 
-                    let final_text = format!(
-                        "({}) {} {}\n{} coins\n({} {})",
-                        i + 1,
-                        crop.icon,
-                        crop.id,
-                        price,
-                        trend,
-                        pct
-                    );
+                    let buy_line = if listing.buy_price != listing.base_buy_price {
+                        Line::from(vec![
+                            Span::from("Buy: "),
+                            Span::styled(
+                                format!("{}", listing.base_buy_price),
+                                Style::default()
+                                    .fg(Color::DarkGray)
+                                    .add_modifier(Modifier::CROSSED_OUT),
+                            ),
+                            Span::from(format!(" {} coins", listing.buy_price)),
+                        ])
+                    } else {
+                        Line::from(format!("Buy: {} coins", listing.buy_price))
+                    };
+
+                    let grow_time =
+                        format_duration(Duration::from_secs(listing.grow_time as u64));
+
+                    let final_text = Text::from(vec![
+                        Line::from(format!("({}) {} {}", i + 1, crop.icon, crop.id)),
+                        buy_line,
+                        Line::from(format!("Sell: {} coins", listing.sell_price)),
+                        Line::from(format!("Grow: {}", grow_time)),
+                        Line::from(format!("({} {})", trend, pct)),
+                    ]);
 
                     frame.render_widget(
                         Paragraph::new(final_text).block(
