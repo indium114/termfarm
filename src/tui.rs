@@ -591,9 +591,8 @@ impl App {
                     self.farm.market.available_seeds.clone().iter().enumerate()
                 {
                     let crop = &registry[seed];
-                    let price = buy_price(seed.to_string(), &self.farm);
-                    let modifier =
-                        &self.farm.market.price_modifiers[seed] - 1.0;
+                    let listing = market_listing(seed.to_string(), &self.farm);
+                    let modifier = listing.modifier - 1.0;
 
                     let trend = {
                         if modifier > 0.0 {
@@ -606,7 +605,9 @@ impl App {
                     };
                     let pct = format!("{:.0}%", modifier * 100.0);
 
-                    let buy_line = if listing.buy_price != listing.base_buy_price {
+                    let buy_line = if listing.buy_price
+                        != listing.base_buy_price
+                    {
                         Line::from(vec![
                             Span::from("Buy: "),
                             Span::styled(
@@ -621,13 +622,22 @@ impl App {
                         Line::from(format!("Buy: {} coins", listing.buy_price))
                     };
 
-                    let grow_time =
-                        format_duration(Duration::from_secs(listing.grow_time as u64));
+                    let grow_time = format_duration(Duration::from_secs(
+                        listing.grow_time as u64,
+                    ));
 
                     let final_text = Text::from(vec![
-                        Line::from(format!("({}) {} {}", i + 1, crop.icon, crop.id)),
+                        Line::from(format!(
+                            "({}) {} {}",
+                            i + 1,
+                            crop.icon,
+                            crop.id
+                        )),
                         buy_line,
-                        Line::from(format!("Sell: {} coins", listing.sell_price)),
+                        Line::from(format!(
+                            "Sell: {} coins",
+                            listing.sell_price
+                        )),
                         Line::from(format!("Grow: {}", grow_time)),
                         Line::from(format!("({} {})", trend, pct)),
                     ]);
