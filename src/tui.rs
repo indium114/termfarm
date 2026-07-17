@@ -248,7 +248,7 @@ impl App {
                             .title_top(" termfarm ")
                             .title_bottom(
                                 Line::from(
-                                    " Harvest <h>, Buy new Plot <n>,"
+                                    " Plant <p>, Harvest <h>, Buy new Plot <n>,"
                                         .to_string()
                                         + NAVIGATION_TEXT,
                                 )
