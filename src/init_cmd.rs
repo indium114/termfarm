@@ -8,7 +8,7 @@ use crate::{
 
 pub fn init() {
     let farm = FarmState {
-        coins: 100,
+        coins: 150,
         plots: (0..3)
             .map(|_| Plot {
                 id: uuid::Uuid::new_v4(),
