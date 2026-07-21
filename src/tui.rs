@@ -126,7 +126,11 @@ impl App {
         seeds
     }
 
-    fn plant_owned_seed(&mut self, index: usize) {
+    fn plant_owned_seed(&mut self) {
+        let Some(index) = self.plant_list_state.selected() else {
+            return;
+        };
+
         let owned_seeds = self.owned_seeds();
 
         let Some((seed_id, _)) = owned_seeds.get(index) else {
@@ -771,7 +775,7 @@ impl App {
 
                                 if index < owned_seed_count {
                                     self.plant_list_state.select(Some(index));
-                                    self.plant_owned_seed(index);
+                                    self.plant_owned_seed();
                                 }
                             }
 
@@ -807,7 +811,7 @@ impl App {
                                     self.plant_list_state.selected()
                                 {
                                     if index < owned_seed_count {
-                                        self.plant_owned_seed(index);
+                                        self.plant_owned_seed();
                                     }
                                 }
                             }
