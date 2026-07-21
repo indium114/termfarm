@@ -24,10 +24,12 @@ use ratatui::{
     prelude::Stylize,
     style::{Color, Modifier, Style},
     text::{Line, Span, Text},
-    widgets::{Block, BorderType, Borders, Clear, Paragraph, Wrap},
+    widgets::{
+        Block, BorderType, Borders, Clear, List, ListItem, ListState,
+        Paragraph, Wrap,
+    },
 };
 use ratatui_notifications::{Level, Notification, Notifications};
-use ratatui_textarea::TextArea;
 use uuid::Uuid;
 
 static NAVIGATION_TEXT: &str = " Change Tabs: <Tab/Shift+Tab>, Quit <q> ";
@@ -72,7 +74,7 @@ pub struct App {
     farm: FarmState,
     notifications: Notifications,
     plant_popup: bool,
-    input: String,
+    plant_list_state: ListState,
 }
 
 impl App {
@@ -83,7 +85,7 @@ impl App {
             farm: persistence::load_farm(),
             notifications: Notifications::new(),
             plant_popup: false,
-            input: "".to_string(),
+            plant_list_state: ListState::default(),
         }
     }
 
@@ -104,24 +106,69 @@ impl App {
         }
     }
 
+    fn owned_seeds(&self) -> Vec<(String, u16)> {
+        let mut seeds = self
+            .farm
+            .inventory
+            .seeds
+            .as_ref()
+            .map(|seeds| {
+                seeds
+                    .iter()
+                    .filter(|(_, amount)| **amount > 0)
+                    .map(|(seed, amount)| (seed.clone(), *amount))
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
+
+        seeds.sort_by(|a, b| a.0.cmp(&b.0));
+
+        seeds
+    }
+
+    fn plant_owned_seed(&mut self, index: usize) {
+        let owned_seeds = self.owned_seeds();
+
+        let Some((seed_id, _)) = owned_seeds.get(index) else {
+            return;
+        };
+
+        self.plant_popup = false;
+        self.plant_list_state.select(None);
+
+        let output = plant(seed_id.clone(), false);
+        let notification = if output.starts_with("No available plots") {
+            Notification::new(output)
+                .title(" Cannot plant")
+                .level(Level::Warn)
+                .build()
+                .unwrap()
+        } else {
+            Notification::new(output)
+                .title(" Planted")
+                .level(Level::Info)
+                .build()
+                .unwrap()
+        };
+
+        self.notifications.add(notification).unwrap();
+    }
+
     pub fn run(
         &mut self,
         terminal: &mut DefaultTerminal,
     ) -> std::io::Result<()> {
-        let mut textarea = TextArea::default();
-        textarea.set_placeholder_text("seed to plant (e.g. avocado)");
-
         while self.running {
             terminal.draw(|frame| {
-                self.draw(frame, &mut textarea);
+                self.draw(frame);
             })?;
-            self.keybinds(&mut textarea)?;
+            self.keybinds()?;
         }
 
         Ok(())
     }
 
-    fn draw(&mut self, frame: &mut Frame, textarea: &mut TextArea) {
+    fn draw(&mut self, frame: &mut Frame) {
         self.farm = persistence::load_farm();
         let registry = crop_registry();
 
@@ -330,24 +377,64 @@ impl App {
                 );
 
                 if self.plant_popup {
+                    let owned_seeds = self.owned_seeds();
+                    let popup_height = (owned_seeds.len() as u16 + 4)
+                        .max(6)
+                        .min(frame.area().height.saturating_sub(2));
+
                     let popup_area = frame.area().centered(
-                        Constraint::Percentage(30),
-                        Constraint::Length(3),
+                        Constraint::Percentage(45),
+                        Constraint::Length(popup_height),
                     );
-                    frame.render_widget(Clear, popup_area);
-                    textarea.set_block(
-                        Block::new()
+
+                    let items = owned_seeds
+                        .iter()
+                        .enumerate()
+                        .map(|(index, (seed_id, amount))| {
+                            let shortcut = if index < 9 {
+                                format!("{}", index + 1)
+                            } else {
+                                " ".to_string()
+                            };
+
+                            let icon = registry
+                                .get(seed_id)
+                                .map(|crop| crop.icon)
+                                .unwrap_or("");
+
+                            ListItem::new(Line::from(format!(
+                                "{shortcut}{icon} {amount}x {seed_id}"
+                            )))
+                        })
+                        .collect::<Vec<_>>();
+
+                    let list = List::new(items)
+                        .block(Block::new()
                             .borders(Borders::ALL)
                             .border_style(Style::default().fg(Color::Cyan))
-                            .border_type(BorderType::Double),
+                            .border_type(BorderType::Double)
+                            .title_top(" Plant a seed ")
+                            .title_bottom(
+                                Line::from(
+                                    " 1-9 plant · ↑/↓ or j/k select · Enter plant · Esc close ",
+                                    )
+                                    .gray(),
+                            )
+                        )
+                        .highlight_symbol(" > ")
+                        .highlight_style(
+                            Style::default()
+                                .fg(Color::Black)
+                                .bg(Color::Cyan)
+                                .add_modifier(Modifier::BOLD)
+                        );
+
+                    frame.render_widget(Clear, popup_area);
+                    frame.render_stateful_widget(
+                        list,
+                        popup_area,
+                        &mut self.plant_list_state,
                     );
-                    frame.render_widget(&*textarea, popup_area);
-                    self.input = textarea
-                        .lines()
-                        .join(" ")
-                        .trim_end()
-                        .to_lowercase()
-                        .to_string();
                 }
 
                 if !self.farm.has_seen_tutorial {
@@ -659,7 +746,7 @@ impl App {
         self.notifications.render(frame, frame.area());
     }
 
-    fn keybinds(&mut self, textarea: &mut TextArea) -> std::io::Result<()> {
+    fn keybinds(&mut self) -> std::io::Result<()> {
         let tick_rate = Duration::from_millis(1);
 
         if event::poll(tick_rate)? {
@@ -667,6 +754,69 @@ impl App {
                 Event::Key(key_event)
                     if key_event.kind == KeyEventKind::Press =>
                 {
+                    if self.plant_popup {
+                        let owned_seed_count = self.owned_seeds().len();
+
+                        match key_event.code {
+                            KeyCode::Esc => {
+                                self.plant_popup = false;
+                                self.plant_list_state.select(None);
+                            }
+
+                            KeyCode::Char(key @ '1'..='9') => {
+                                let index = key
+                                    .to_digit(10)
+                                    .map(|value| value as usize - 1)
+                                    .unwrap_or(0);
+
+                                if index < owned_seed_count {
+                                    self.plant_owned_seed(index);
+                                }
+                            }
+
+                            KeyCode::Up | KeyCode::Char('k') => {
+                                if owned_seed_count > 0 {
+                                    let selected = self
+                                        .plant_list_state
+                                        .selected()
+                                        .unwrap_or(0);
+
+                                    self.plant_list_state.select(Some(
+                                        selected.saturating_sub(1),
+                                    ));
+                                }
+                            }
+
+                            KeyCode::Down | KeyCode::Char('j') => {
+                                if owned_seed_count > 0 {
+                                    let selected = self
+                                        .plant_list_state
+                                        .selected()
+                                        .unwrap_or(0);
+
+                                    let next = (selected + 1)
+                                        .min(owned_seed_count - 1);
+
+                                    self.plant_list_state.select(Some(next));
+                                }
+                            }
+
+                            KeyCode::Enter => {
+                                if let Some(index) =
+                                    self.plant_list_state.selected()
+                                {
+                                    if index < owned_seed_count {
+                                        self.plant_owned_seed(index);
+                                    }
+                                }
+                            }
+
+                            _ => {}
+                        }
+
+                        return Ok(());
+                    }
+
                     match key_event.code {
                         KeyCode::Char('q') => {
                             persistence::save_farm(&self.farm);
@@ -796,28 +946,27 @@ impl App {
                                 }
                             }
                         }
-                        KeyCode::Char('p')
-                            if self.active_tab == Tabs::Farm
-                                && !self.plant_popup =>
-                        {
-                            self.plant_popup = true
-                        }
-                        KeyCode::Esc if self.plant_popup => {
-                            self.plant_popup = false
-                        }
-                        KeyCode::Enter if self.plant_popup => {
-                            self.plant_popup = false;
+                        KeyCode::Char('p') if self.active_tab == Tabs::Farm => {
+                            let owned_seeds = self.owned_seeds();
 
-                            let output = plant(self.input.clone(), false);
-                            let notif = Notification::new(output)
-                                .title(" Planted")
-                                .level(Level::Info)
+                            if owned_seeds.is_empty() {
+                                let notification = Notification::new(
+                                    "You don't have any seeds to plant",
+                                )
+                                .title(" No seeds")
+                                .level(Level::Warn)
                                 .build()
                                 .unwrap();
-                            self.notifications.add(notif).unwrap();
+
+                                self.notifications.add(notification).unwrap();
+                            } else {
+                                self.plant_list_state.select(Some(0));
+                                self.plant_popup = true;
+                            }
                         }
-                        _ if self.plant_popup => {
-                            textarea.input(key_event);
+                        KeyCode::Esc if self.plant_popup => {
+                            self.plant_popup = false;
+                            self.plant_list_state.select(None);
                         }
                         KeyCode::Esc if !self.farm.has_seen_tutorial => {
                             self.farm.has_seen_tutorial = true;
