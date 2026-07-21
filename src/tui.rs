@@ -770,6 +770,7 @@ impl App {
                                     .unwrap_or(0);
 
                                 if index < owned_seed_count {
+                                    self.plant_list_state.select(Some(index));
                                     self.plant_owned_seed(index);
                                 }
                             }
