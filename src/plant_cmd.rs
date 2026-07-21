@@ -64,10 +64,15 @@ pub fn plant(seed_id: String, interactive: bool) -> String {
             }
         }
         None => {
-            println!(
-                "No available plots.\nHarvest some crops or purchase more plots from the Market"
-            );
-            exit(1);
+            let message = "No available plots.\nHarvest some crops or purchase more plots from the Market";
+
+            match interactive {
+                true => {
+                    println!("{message}");
+                    exit(1);
+                }
+                false => message.to_string(),
+            }
         }
     }
 }
