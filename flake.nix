@@ -4,13 +4,27 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
+    naersk = {
+      url = "github:nix-community/naersk";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, flake-utils }:
-    flake-utils.lib.eachDefaultSystem (system:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      flake-utils,
+      naersk,
+    }:
+    flake-utils.lib.eachDefaultSystem (
+      system:
       let
         pkgs = import nixpkgs { inherit system; };
-      in {
+
+        naersk' = pkgs.callPackage naersk { };
+      in
+      {
         devShells.default = pkgs.mkShell {
           name = "rust-devshell";
 
@@ -24,18 +38,14 @@
           ];
         };
 
-        packages.termfarm = pkgs.rustPlatform.buildRustPackage {
-          name = "termfarm";
-          version = "2.1.3";
-
+        packages.termfarm = naersk'.buildPackage {
           src = ./.;
-
-          cargoLock.lockFile = ./Cargo.lock;
         };
 
         apps.termfarm = {
           type = "app";
           program = "${self.packages.${pkgs.stdenv.hostPlatform.system}.termfarm}/bin/termfarm";
         };
-      });
+      }
+    );
 }
